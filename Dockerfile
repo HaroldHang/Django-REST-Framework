@@ -47,5 +47,10 @@ EXPOSE 9000
 
 # Run the application.
 #CMD gunicorn '.venv.Lib.site-packages.asgiref.wsgi' --bind=0.0.0.0:9000
+
+# Run Migration
+RUN ["python", "manage.py", "makemigrations"]
+RUN ["python", "manage.py", "migrate"]
+
 # Run the Django app
 CMD ["python", "manage.py", "runserver", "0.0.0.0:9000"]

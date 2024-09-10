@@ -28,10 +28,10 @@ jobs:
                 VERSION=$VERSION
 
                 # Pull the existing latest image (optional)
-                #docker pull $IMAGE_NAME:latest || true
+                docker pull $IMAGE_NAME:latest || true
 
                 # Retag the current latest image with the previous version
-                #docker tag $IMAGE_NAME:latest $IMAGE_NAME:$VERSION
+                docker tag $IMAGE_NAME:latest $IMAGE_NAME:$VERSION
 
                 docker build . -t $IMAGE_NAME:latest
         -   name: Push the Docker Image
@@ -41,7 +41,7 @@ jobs:
 
                 VERSION=$VERSION
 
-                #docker push $IMAGE_NAME:$VERSION
+                docker push $IMAGE_NAME:$VERSION
                 docker push $IMAGE_NAME:latest
         
     deploy:

@@ -36,14 +36,18 @@ RUN --mount=type=cache,target=/root/.cache/pip \
     --mount=type=bind,source=requirements.txt,target=requirements.txt \
     python -m pip install -r requirements.txt
 
+# Copy the entrypoint script before making it executable
+COPY entrypoint.sh /app/entrypoint.sh
+
+# Make the entrypoint script executable
+RUN chmod +x /app/entrypoint.sh
+
 # Switch to the non-privileged user to run the application.
 USER appuser
 
 # Copy the source code into the container.
 COPY . .
 
-# Make the entrypoint script executable
-RUN chmod +x /app/entrypoint.sh
 
 # Run the entrypoint script
 ENTRYPOINT ["/app/entrypoint.sh"]

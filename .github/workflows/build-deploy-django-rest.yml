@@ -1,0 +1,66 @@
+name: Build and deploy django rest
+on:
+    push:
+        branches: ["main"]
+
+
+jobs:
+    build:
+        runs-on: ubuntu-latest
+        steps:
+        -   uses: actions/checkout@v4
+        -   name: Login to Scaleway Container Registry
+            uses: docker/login-action@v3
+            with:
+                username: nologin
+                password: ${{ secrets.SCALEWAY_API_KEY }}
+                registry: ${{ secrets.CONTAINER_REGISTRY_ENDPOINT }}
+        -   name: Extract current version
+            id: version
+            run: |
+                echo "VERSION=${GITHUB_SHA::7}" >> $GITHUB_ENV
+        -   name: Build the Docker image
+            run: |
+                # Define image name
+                IMAGE_NAME=${{ secrets.CONTAINER_REGISTRY_ENDPOINT }}/django-rest
+
+                # Get the current version tag
+                VERSION=$VERSION
+
+                # Pull the existing latest image (optional)
+                docker pull $IMAGE_NAME:latest || true
+
+                # Retag the current latest image with the previous version
+                docker tag $IMAGE_NAME:latest $IMAGE_NAME:$VERSION
+
+                docker build . -t $IMAGE_NAME:latest
+        -   name: Push the Docker Image
+            run: |
+                # Define image name
+                IMAGE_NAME=${{ secrets.CONTAINER_REGISTRY_ENDPOINT }}/django-rest
+
+                VERSION=$VERSION
+
+                docker push $IMAGE_NAME:$VERSION
+                docker push $IMAGE_NAME:latest
+        
+    deploy:
+        # Deployment job
+        runs-on: ubuntu-latest
+        needs: build
+
+        steps:
+        -   name: Deploy to VM via SSH
+            uses: appleboy/ssh-action@v1.0.3
+            with:
+                host: ${{ secrets.SSH_HOST }}
+                username: ${{ secrets.SSH_USERNAME }}
+                key: ${{ secrets.SSH_PRIVATE_KEY }}
+                #key_path: 
+                #port: 22
+                script: |
+                    docker login ${{secrets.CONTAINER_REGISTRY_ENDPOINT}} -u nologin -p ${{ secrets.SCALEWAY_API_KEY }}
+                    docker pull ${{ secrets.CONTAINER_REGISTRY_ENDPOINT }}/ml-app
+                    docker stop django-rest-container || true
+                    docker rm django-rest-container || true
+                    docker run -d --name django-rest-container -p 9000:9000 ${{ secrets.CONTAINER_REGISTRY_ENDPOINT }}/django-rest

@@ -42,15 +42,17 @@ USER appuser
 # Copy the source code into the container.
 COPY . .
 
+# Make the entrypoint script executable
+RUN chmod +x /app/entrypoint.sh
+
+# Run the entrypoint script
+ENTRYPOINT ["/app/entrypoint.sh"]
+
 # Expose the port that the application listens on.
 EXPOSE 9000
 
 # Run the application.
 #CMD gunicorn '.venv.Lib.site-packages.asgiref.wsgi' --bind=0.0.0.0:9000
-
-# Run Migration
-RUN ["python", "manage.py", "makemigrations"]
-RUN ["python", "manage.py", "migrate"]
 
 # Run the Django app
 CMD ["python", "manage.py", "runserver", "0.0.0.0:9000"]
